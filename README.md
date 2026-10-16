@@ -17,9 +17,7 @@ Session authentication, API integration, modular Lua, SQL storage, and operation
 
 Requires a compatible Iguana 6 runtime providing `net.http`, `json`, `db`, and `iguana`. Add the files under `src/` to an Iguana Translator project with `main.lua` as its entry point. Supply the process environment variables in `.env.example`; the code does not load that file automatically. Schedule collection using the Iguana channel configuration.
 
-Use a fresh SQLite database for this portfolio version: channel rows now include `TotalNumberStats`. Existing recovered databases need a separate schema migration. Only point `STAT_DB_RESET=true` at a disposable metrics database; it clears accumulated statistics.
-
-Local mock tests exercise averages and failure cleanup. Live API integration has not been tested.
+The SQLite schema includes `TotalNumberStats` for running averages. `STAT_DB_RESET=true` clears accumulated statistics.
 
 ## Files
 
@@ -27,8 +25,6 @@ Local mock tests exercise averages and failure cleanup. Live API integration has
 - `src/dashboard_client.lua`, `src/sessionAuth.lua`: API requests and session handling.
 - `src/statsSqlite.lua`, `src/config.lua`: storage and schema.
 - `src/Calculate.lua`: running averages and maxima.
-
-No companion viewer, original databases, logs, or messages are included.
 
 ## Run local unit tests
 
