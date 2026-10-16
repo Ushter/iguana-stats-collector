@@ -1,0 +1,16 @@
+{
+  "LocalDependencies": [
+    "Calculate.lua",
+    "config.lua",
+    "dashboard_client.lua",
+    "sessionAuth.lua",
+    "statsSqlite.lua"
+  ],
+  "LuaDependencies": [],
+  "OtherDependencies": [],
+  "version_info": {
+    "build": 0,
+    "major": 6,
+    "minor": 0
+  }
+}
