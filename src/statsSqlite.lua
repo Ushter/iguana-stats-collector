@@ -1,8 +1,12 @@
+-- Persistence layer. SQL layouts live in config.lua; numeric aggregation lives in Calculate.lua.
+
 local DB = {}
 local config = require "config"
 local calculate = require "Calculate"
 
 -- Create tables when collecting into a new database.
+-- Ensure both aggregate tables exist on the supplied open connection.
+-- Safe to call repeatedly for a fresh-compatible schema; does not migrate old columns.
 local function DBExists(Conn)
    -- Run table creation SQL
    Conn:execute{sql = config.Database.SERVER_CREATE, live = true}
@@ -12,6 +16,8 @@ local function DBExists(Conn)
 end
 
 -- Reset collected statistics when explicitly configured.
+-- Delete saved server and channel observations for an explicitly requested reset.
+-- Leaves table definitions intact; this branch does not collect a replacement sample.
 local function clearStatsDB(Conn)
    iguana.logInfo("Clearing all stats from the database...")
 
@@ -22,6 +28,8 @@ local function clearStatsDB(Conn)
 end
 
 -- Escape SQL helper
+-- Double apostrophes before inserting string values into quoted SQL placeholders.
+-- Other values are converted to text. Use only with these fixed SQL templates.
 local function escapeSql(value)
    if type(value) == "string" then
       return value:gsub("'", "''")
@@ -30,6 +38,9 @@ local function escapeSql(value)
 end
 
 -- SERVER STATS
+-- Save each server observation using its label as the primary key.
+-- New rows seed their mean and maximum from the first sample. Existing rows
+-- combine their previous mean/sample count with the incoming observation.
 local function IguanaServersStats(Servers, Conn)
 
    for _, s in ipairs(Servers) do
@@ -66,6 +77,7 @@ local function IguanaServersStats(Servers, Conn)
 
          -- Update with NEW averages and NEW max values
          local old = row[1]
+         -- Compute means in Lua; the SQL update advances TotalNumberStats once per sample.
          local avgs = calculate.computeServerAverages(old, s)
 
          local sqlUpdate = string.format(config.Database.SERVER_UPDATE,
@@ -108,6 +120,8 @@ local function IguanaServersStats(Servers, Conn)
 end
 
 -- CHANNEL STATS
+-- Insert or update one aggregate row per channel GUID.
+-- Preserve historical maxima while refreshing channel labels and running averages.
 local function IguanaChannelStats(Channels, Conn)
 
    for _, c in ipairs(Channels) do
@@ -133,6 +147,7 @@ local function IguanaChannelStats(Channels, Conn)
 
          -- Update channel averages + max
          local old = row[1]
+         -- Use the existing observation count before the UPDATE increments it.
          local avgs = calculate.computeChannelAverages(old, c)
 
          local sqlUpdate = string.format(config.Database.CHANNEL_UPDATE,
@@ -157,9 +172,12 @@ local function IguanaChannelStats(Channels, Conn)
    end
 end
 
+-- Public storage entry point. Initialize tables, then either clear statistics
+-- or aggregate this cycle. The caller owns the connection and must close it.
 function DB.statsSqlite(ServersData , ChannelsData, Conn)
    DBExists(Conn)
 
+   -- Reset is opt-in and case-insensitive; an unset variable defaults to ordinary collection.
    if (os.getenv('STAT_DB_RESET') or 'false'):lower() == "true" then
       clearStatsDB(Conn)
    else

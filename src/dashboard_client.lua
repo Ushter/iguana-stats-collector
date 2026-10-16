@@ -1,3 +1,5 @@
+-- HTTP transport only: response parsing and metric extraction live in main.lua.
+
 local SessionAuth = require "sessionAuth"
 local config       = require "config"
 
@@ -5,6 +7,8 @@ local DashboardClient = {}
 local ChannelClient   = {}
 
 -- Shared Session Check
+-- Reuse a stored session cookie or perform login when none is available.
+-- This checks local cookie presence; it does not validate expiry with the server.
 local function ensureValidSession(Request, LocalUrl)
    if not SessionAuth.isSessionValid(Request) then
       return SessionAuth.doLogin(Request, LocalUrl)
@@ -15,6 +19,8 @@ end
 ------------------------------------------------------------
 -- DASHBOARD FETCH
 ------------------------------------------------------------
+-- POST dashboard selection parameters and return body, HTTP status, and headers.
+-- On login failure, return nil, 0, nil, and an explanatory error string.
 function DashboardClient.fetch(Request, LocalUrl, Params)
    Params = Params or config.DefaultParams()
 
@@ -38,6 +44,8 @@ end
 -- Fetch data from specific channel(s)
 -- Params example: { channel = "MyChannel", AutomaticRequest = 1 }
 ------------------------------------------------------------
+-- POST channel-specific parameters to retrieve detailed status for a selected channel.
+-- Returns the same response tuple as Dashboard.fetch; the caller parses JSON.
 function ChannelClient.fetch(Request, LocalUrl, Params)
    Params = Params or {}
 

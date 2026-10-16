@@ -1,5 +1,9 @@
+-- Numeric aggregation helpers shared by the SQLite insert/update workflow.
+
 local Calc = {}
 
+-- Normalize a plain value or Iguana database node into a Lua number.
+-- Absent, unreadable, or nonnumeric values become zero so aggregation can continue.
 local function valueOf(field)
    if field == nil then
       return 0
@@ -19,6 +23,8 @@ local function valueOf(field)
 end
 
 --Compute a running average
+-- Update a running mean using the previous mean and number of saved observations.
+-- count excludes the incoming observation. This avoids retaining the full sample history.
 function Calc.avg(oldVal, newVal, count)
    oldVal = valueOf(oldVal)
    newVal = valueOf(newVal)
@@ -28,12 +34,15 @@ end
 
 -- Compute the maximum of two values
 
+-- Return the larger numeric observation, accepting database nodes as well as numbers.
 function Calc.computeMax(oldVal, newVal)
    oldVal = valueOf(oldVal)
    newVal = valueOf(newVal)
    return (newVal > oldVal) and newVal or oldVal
 end
 
+-- Build the server average fields for the next UPDATE statement.
+-- old is the saved SQLite row; s is the current server observation. Returns a new table.
 function Calc.computeServerAverages(old, s)
    local count = valueOf(old.TotalNumberStats)
 
@@ -51,6 +60,8 @@ function Calc.computeServerAverages(old, s)
    }
 end
 
+-- Build channel queue and throughput averages using the saved sample count.
+-- The count is the number of observations, not the maximum observed metric.
 function Calc.computeChannelAverages(old, c)
    local count = valueOf(old.TotalNumberStats)
 
