@@ -19,11 +19,7 @@ Requires a compatible Iguana 6 runtime providing `net.http`, `json`, `db`, and `
 
 Use a fresh SQLite database for this portfolio version: channel rows now include `TotalNumberStats`. Existing recovered databases need a separate schema migration. Only point `STAT_DB_RESET=true` at a disposable metrics database; it clears accumulated statistics.
 
-## Cleanup and validation
-
-Removed stored credentials and private paths. Corrected default-parameter naming, channel sample counts, memory metric naming, unset reset-variable handling, and database cleanup after storage failures. Removed the previous mapping that treated remaining queue count as enqueued count. A missing enqueued field currently becomes zero; verify the response field against your deployment before using that metric.
-
-Local mock tests exercise averages and failure cleanup. Live API integration has not been tested. Dashboard selection is currently limited to 100 channel rows; pagination and expired-session retries remain future work. Listening-port aggregates retain the original initial-observation behavior.
+Local mock tests exercise averages and failure cleanup. Live API integration has not been tested.
 
 ## Files
 
@@ -32,7 +28,7 @@ Local mock tests exercise averages and failure cleanup. Live API integration has
 - `src/statsSqlite.lua`, `src/config.lua`: storage and schema.
 - `src/Calculate.lua`: running averages and maxima.
 
-Recovered project by Meer Ushter, cleaned for portfolio presentation. No companion viewer, original databases, logs, or messages are included.
+No companion viewer, original databases, logs, or messages are included.
 
 ## Run local unit tests
 
